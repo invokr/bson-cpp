@@ -13,23 +13,20 @@ http://bsonspec.org.
 
 ## Building
 
-This project uses cmake as its build system.
-To build the projects, run the following commands. You will find a shared library in dist/lib and a demo executable in dist/bin.
-
-    cd /path/to/projectsource
-    mkdir build && cd build
-    cmake .. && make
+There is no need to build bson-cpp as the library is head-only.
 
 ## Installing
 
-There is no install script / Makefile included.
-You can use the library by adding src/ to the include path and dist/lib to the link path.
+If you want access to the library accross your system, simply move the contents of /src 
+to a directory included in your include_path (e.g. /usr/local/include).
+It's a good idea to prefix the contents in case you get name-clashes with existing
+files from mongodb.
 
 ## Usage
 
 ### Prerequisites
 
-You want to link against the library, and include the bson header:
+You want to include the bson header:
 
     #include <bson/bson.h>
 
@@ -81,10 +78,36 @@ Objects can be deserialized by providing the raw data as the first argument to t
     const char* data = readFromFile(filename);
     BSONObj p(data);
 
+BSONObj does not copy the data you provide:
+    
+    std::string data = readFromFileAsString(filename);
+    BSONObj p(data.c_str());
+
+    //e.g. {"my":"data"}
+    std::cout << p.toString() << std::endl;
+
+    //overwrite data variable
+    data = "";
+
+    //{}
+    std::cout << p.toString() << std::endl;
+    
+To make sure that once your variables go out of scope and / or are modified, use the getOwned
+method. This ensures that the data is actually owned by your BSONObj:
+
+    std::string data = readFromFileAsString(filename);
+    BSONObj p(data.c_str());
+
+    if (!p.isOwned()) {
+        p = p.getOwned();
+    }
+
+    //alternative:
+    BSONObj p = BSONObj(data.c_str()).getOwned();
+
 ## License
 
 The project is license under the very permissive Apache 2.0 license.
-Checkout the source files for more information on it.
 
 ## Links
 
