@@ -47,6 +47,5 @@
 #include "bson/bsonobjiterator.h"
 #include "bson/bsontypes.h"
 #include "bson/bson-inl.h"
-#include "bson/oid.h"
 #include "bson/util/builder.h"
 #include "mongo/undef_macros.h"

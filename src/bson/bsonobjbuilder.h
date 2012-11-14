@@ -253,46 +253,6 @@ namespace mongo {
          */
         bool appendAsNumber( const StringData& fieldName , const std::string& data );
 
-        /** Append a BSON Object ID (OID type).
-            @deprecated Generally, it is preferred to use the append append(name, oid)
-            method for this.
-        */
-        BSONObjBuilder& appendOID(const StringData& fieldName, OID *oid = 0 , bool generateIfBlank = false ) {
-            _b.appendNum((char) jstOID);
-            _b.appendStr(fieldName);
-            if ( oid )
-                _b.appendBuf( (void *) oid, 12 );
-            else {
-                OID tmp;
-                if ( generateIfBlank )
-                    tmp.init();
-                else
-                    tmp.clear();
-                _b.appendBuf( (void *) &tmp, 12 );
-            }
-            return *this;
-        }
-
-        /**
-        Append a BSON Object ID.
-        @param fieldName Field name, e.g., "_id".
-        @returns the builder object
-        */
-        BSONObjBuilder& append( const StringData& fieldName, OID oid ) {
-            _b.appendNum((char) jstOID);
-            _b.appendStr(fieldName);
-            _b.appendBuf( (void *) &oid, 12 );
-            return *this;
-        }
-
-        /**
-        Generate and assign an object id for the _id field.
-        _id should be the first element in the object for good performance.
-        */
-        BSONObjBuilder& genOID() {
-            return append("_id", OID::gen());
-        }
-
         /** Append a time_t date.
             @param dt a C-style 32 bit date value, that is
             the number of seconds since January 1, 1970, 00:00:00 GMT
@@ -424,19 +384,6 @@ namespace mongo {
         @param time - in millis (but stored in seconds)
         */
         BSONObjBuilder& appendTimestamp( const StringData& fieldName , unsigned long long time , unsigned int inc );
-
-        /*
-        Append an element of the deprecated DBRef type.
-        @deprecated
-        */
-        BSONObjBuilder& appendDBRef( const StringData& fieldName, const StringData& ns, const OID &oid ) {
-            _b.appendNum( (char) DBRef );
-            _b.appendStr( fieldName );
-            _b.appendNum( (int) ns.size() + 1 );
-            _b.appendStr( ns );
-            _b.appendBuf( (void *) &oid, 12 );
-            return *this;
-        }
 
         /** Append a binary data element
             @param fieldName name of the field
@@ -576,9 +523,6 @@ namespace mongo {
             _s.endField( name );
             return _s;
         }
-
-        /** Stream oriented way to add field names and values. */
-        BSONObjBuilder& operator<<( GENOIDLabeler ) { return genOID(); }
 
         // prevent implicit string conversions which would allow bad things like BSON( BSON( "foo" << 1 ) << 2 )
         struct ForceExplicitString {

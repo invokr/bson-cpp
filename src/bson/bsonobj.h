@@ -56,7 +56,6 @@ namespace mongo {
      Bool:      <byte>
      EOO:       nothing follows
      Undefined: nothing follows
-     OID:       an OID object
      NumberDouble: <double>
      NumberInt: <int32>
      String:    <unsigned32 strsizewithnull><cstring>

@@ -91,8 +91,6 @@ dodouble:
                     return isNaN(right) ? 0 : -1;
                 return 1;
             }
-        case jstOID:
-            return memcmp(l.value(), r.value(), 12);
         case Code:
         case Symbol:
         case String:
@@ -544,9 +542,6 @@ dodouble:
         case NumberLong:
             x = 8;
             break;
-        case jstOID:
-            x = 12;
-            break;
         case Symbol:
         case Code:
         case mongo::String:
@@ -623,9 +618,6 @@ dodouble:
         case NumberDouble:
         case NumberLong:
             x = 8;
-            break;
-        case jstOID:
-            x = 12;
             break;
         case Symbol:
         case Code:
@@ -754,17 +746,6 @@ dodouble:
                 s.write(valuestr(), valuestrsize()-1);
                 s << '"';
             }
-            break;
-        case DBRef:
-            s << "DBRef('" << valuestr() << "',";
-            {
-                mongo::OID *x = (mongo::OID *) (valuestr() + valuestrsize());
-                s << *x << ')';
-            }
-            break;
-        case jstOID:
-            s << "ObjectId('";
-            s << __oid() << "')";
             break;
         case BinData:
             s << "BinData";

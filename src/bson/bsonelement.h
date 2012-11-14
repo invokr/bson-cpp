@@ -21,9 +21,11 @@
 #include <string>
 #include <vector>
 
+#include "bson/util/misc.h"
+#include "bson/util/builder.h"
 #include "bson/bsontypes.h"
-#include "bson/oid.h"
 #include "mongo/float_utils.h"
+#include "mongo/hex.h"
 
 namespace mongo {
     class OpTime;
@@ -39,6 +41,19 @@ namespace bson {
 }
 
 namespace mongo {
+    /** Formatting mode for generating JSON from BSON.
+        See <http://mongodb.onconfluence.com/display/DOCS/Mongo+Extended+JSON>
+        for details.
+    */
+    enum JsonStringFormat {
+        /** strict RFC format */
+        Strict,
+        /** 10gen format, which is close to JS format.  This form is understandable by
+            javascript running inside the Mongo server via eval() */
+        TenGen,
+        /** Javascript JSON compatible */
+        JS
+    };
 
     /* l and r MUST have same type when called: check that first. */
     int compareElementValues(const BSONElement& l, const BSONElement& r);
@@ -72,7 +87,6 @@ namespace mongo {
         int Int()                   const { return chk(NumberInt)._numberInt(); }
         bool Bool()                 const { return chk(mongo::Bool).boolean(); }
         std::vector<BSONElement> Array() const; // see implementation for detailed comments
-        mongo::OID OID()            const { return chk(jstOID).__oid(); }
         void Null()                 const { chk(isNull()); } // throw UserException if not null
         void OK()                   const { chk(ok()); }     // throw UserException if element DNE
 
@@ -91,7 +105,6 @@ namespace mongo {
         void Val(long long& v)      const { v = Long(); }
         void Val(bool& v)           const { v = Bool(); }
         void Val(BSONObj& v)        const;
-        void Val(mongo::OID& v)     const { v = OID(); }
         void Val(int& v)            const { v = Int(); }
         void Val(double& v)         const { v = Double(); }
         void Val(std::string& v)    const { v = String(); }
@@ -186,7 +199,7 @@ namespace mongo {
         */
         bool trueValue() const;
 
-        /** True if number, string, bool, date, OID */
+        /** True if number, string, bool, date */
         bool isSimpleType() const;
 
         /** True if element is of a numeric type. */
@@ -221,10 +234,6 @@ namespace mongo {
             Note: casts to double, data loss may occur with large (>52 bit) NumberLong values.
         */
         double number() const { return numberDouble(); }
-
-        /** Retrieve the object ID stored in the object.
-            You must ensure the element is of type jstOID first. */
-        const mongo::OID &__oid() const { return *reinterpret_cast< const mongo::OID* >( value() ); }
 
         /** True if element is null. */
         bool isNull() const {
@@ -410,13 +419,6 @@ namespace mongo {
             return value() + 4;
         }
 
-        const mongo::OID& dbrefOID() const {
-            uassert( 10064 ,  "not a dbref" , type() == DBRef );
-            const char * start = value();
-            start += 4 + *reinterpret_cast< const int* >( start );
-            return *reinterpret_cast< const mongo::OID* >( start );
-        }
-
         /** this does not use fieldName in the comparison, just the value */
         bool operator<( const BSONElement& other ) const {
             int x = (int)canonicalType() - (int)other.canonicalType();
@@ -503,8 +505,6 @@ namespace mongo {
             return 25;
         case BinData:
             return 30;
-        case jstOID:
-            return 35;
         case mongo::Bool:
             return 40;
         case mongo::Date:
@@ -566,7 +566,6 @@ namespace mongo {
         case mongo::String:
         case mongo::Bool:
         case mongo::Date:
-        case jstOID:
             return true;
         default:
             return false;

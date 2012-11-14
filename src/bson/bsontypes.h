@@ -56,8 +56,6 @@ namespace mongo {
         BinData=5,
         /** Undefined type */
         Undefined=6,
-        /** ObjectId */
-        jstOID=7,
         /** boolean type */
         Bool=8,
         /** date type */
